@@ -1,7 +1,7 @@
 on: push
 jobs:
   test:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     env:
       GITEA_PORT: ${{ vars.GITEA_PORT || '3005' }}
     steps:
@@ -10,7 +10,7 @@ jobs:
       if: ${{ !vars.RUNNER_BIN }}
       shell: bash
       run: |
-        curl -L https://dl.gitea.com/act_runner/0.2.12/act_runner-0.2.12-darwin-arm64 --output "$RUNNER_TEMP/gitea-runner"
+        curl -L https://dl.gitea.com/act_runner/0.2.12/act_runner-0.2.12-linux-amd64 --output "$RUNNER_TEMP/gitea-runner"
         chmod +x "$RUNNER_TEMP/gitea-runner"
         echo "RUNNER_BIN=$RUNNER_TEMP/gitea-runner" >> $GITHUB_ENV
     - uses: ./.github/actions/setup-gitea

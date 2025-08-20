@@ -3,7 +3,7 @@ inputs:
     description: 'Path to the Gitea binary'
   GITEA_PLATFORM:
     description: 'Port for Gitea to run on'
-    default: 'darwin-10.12-arm64'
+    default: 'linux-amd64'
   GITEA_PORT:
     description: 'Port for Gitea to run on'
     default: 3005
