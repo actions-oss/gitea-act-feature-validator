@@ -78,7 +78,7 @@ jobs:
                 repo: "test-repo",
                 job_id: job.id // replace with actual job ID
               });
-              console.log(jobLogs);
+              process.stdout.write(jobLogs.data + "\n");
             }
           }
         github-token: ${{ env.TOKEN }}
