@@ -44,14 +44,16 @@ jobs:
               steps:
               - name: Checkout code
                 uses: actions/checkout@v4
+              - run: echo Begin
               - name: Run tests
                 run: |
                   echo key=value > $GITEA_ENV
               - run: exit 1
                 if: env.key != 'value'
+              - run: echo Footer
           `).toString('base64'),
           });
-          await exec.exec(`${process.env.RUNNER_BIN} register --instance http://localhost:${{ env.GITEA_PORT }} --token ${process.env.RUNNER_TOKEN} --name test-runner --labels ubuntu-latest --no-interactive`);
+          await exec.exec(`${process.env.RUNNER_BIN} register --instance http://localhost:${{ env.GITEA_PORT }} --token ${process.env.RUNNER_TOKEN} --name test-runner --labels ubuntu-latest:docker://docker.gitea.com/runner-images:ubuntu-24.04 --no-interactive`);
 
           await exec.exec(`${process.env.RUNNER_BIN} daemon --once`);
 
