@@ -20,6 +20,8 @@ runs:
         echo "Downloading Gitea binary..."
         curl -L https://dl.gitea.io/gitea/main-nightly/gitea-main-nightly-${{ inputs.GITEA_PLATFORM }} -o "$GITEA_BIN"
         chmod +x "$GITEA_BIN"
+        ls -l "$GITEA_BIN"
+        "$GITEA_BIN" --version
       fi
   - name: Setup Gitea
     shell: bash
