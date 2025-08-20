@@ -1,0 +1,110 @@
+on: push
+jobs:
+  test:
+    runs-on: macos-latest
+    env:
+      GITEA_PORT: ${{ vars.GITEA_PORT || '3005' }}
+    steps:
+    - uses: actions/checkout@v4
+    - name: Download Runner
+      if: ${{ !vars.RUNNER_BIN }}
+      shell: bash
+      run: |
+        go build -o "$RUNNER_TEMP/gitea-runner"
+        echo "RUNNER_BIN=$RUNNER_TEMP/gitea-runner" >> $GITHUB_ENV
+    - uses: ./.github/actions/setup-gitea
+      with:
+        gitea_bin: ${{ vars.GITEA_BIN }}
+        gitea_port: ${{ env.GITEA_PORT }}
+        gitea_platform: ${{ vars.GITEA_PLATFORM || 'linux-amd64' }}
+    - name: Run tests
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+
+          await github.rest.repos.createForAuthenticatedUser({
+            name: 'test-repo',
+            private: false,
+            auto_init: true,
+            default_branch: 'main',
+            trust_model: 'committer',
+          })
+          await github.rest.repos.createForAuthenticatedUser({
+            name: 'test-repo2',
+            private: false,
+            auto_init: true,
+            default_branch: 'main',
+            trust_model: 'collaboratorcommitter',
+          })
+          await github.rest.repos.createForAuthenticatedUser({
+            name: 'test-repo3',
+            private: false,
+            auto_init: true,
+            default_branch: 'main',
+            trust_model: 'collaborator',
+          })
+          // Create new file in the repository
+          await github.request("POST /repos/{owner}/{repo}/contents/{path}", {
+            owner: "test01",
+            repo: "test-repo",
+            path: '.github/workflows/test.yml',
+            message: 'Add test workflow',
+            branch: 'main',
+            content: Buffer.from(`on: push
+          jobs:
+            test:
+              strategy:
+                fail-fast: false
+                matrix:
+                  no:
+                  - 1
+              runs-on: ubuntu-latest
+              steps:
+              - name: Checkout code
+                uses: actions/checkout@v4
+              - name: Run tests
+                run: |
+                  echo key=value > $GITEA_ENV
+              - run: exit 1
+                if: env.key != 'value'
+          `).toString('base64'),
+          });
+          await github.request("POST /repos/{owner}/{repo}/contents/{path}", {
+            owner: "test01",
+            repo: "test-repo",
+            path: 'README2.md',
+            message: 'Add readme',
+            branch: 'main',
+            content: Buffer.from(`Hello World`).toString('base64'),
+          });
+          await github.request("POST /repos/{owner}/{repo}/contents/{path}", {
+            owner: "test01",
+            repo: "test-repo2",
+            path: 'README2.md',
+            message: 'Add readme',
+            branch: 'main',
+            content: Buffer.from(`Hello World`).toString('base64'),
+          });
+          await github.request("POST /repos/{owner}/{repo}/contents/{path}", {
+            owner: "test01",
+            repo: "test-repo3",
+            path: 'README2.md',
+            message: 'Add readme',
+            branch: 'main',
+            content: Buffer.from(`Hello World`).toString('base64'),
+          });
+          await exec.exec(`${process.env.RUNNER_BIN} register --instance http://localhost:${{ env.GITEA_PORT }} --token ${process.env.RUNNER_TOKEN} --name test-runner --labels ubuntu-latest --no-interactive`);
+
+          //Block until whatever
+          while (true) {
+            await exec.exec(`${process.env.RUNNER_BIN} daemon --once`);
+          }
+        github-token: ${{ env.TOKEN }}
+        base-url: "http://localhost:${{ env.GITEA_PORT }}/api/v1"
+      env:
+        RUNNER_BIN: ${{ vars.RUNNER_BIN || env.RUNNER_BIN }}
+    - name: Sleep
+      if: vars.SLEEP
+      run: |
+        sleep ${{ vars.SLEEP }}
